@@ -50,8 +50,13 @@ def calculate_channel_sd(channel_mean, num_img):
     return(channel_sd)
 
 class EuroSATDataset(Dataset):
-    def __init__(self, data_path, channel_mean, channel_sd, transform=False):
+    def __init__(self, data_path, preprocessing_stats_path, transform=False):
         self.data_path = data_path
+        # getting preprocessing statistics
+        with open(preprocessing_stats_path, 'rb') as f:
+                preprocessing_stats = pickle.load(f)
+        channel_mean = preprocessing_stats['mean']
+        channel_sd = preprocessing_stats['sd']
         # setting normalization and augmentation
         self.transform = transform
         if self.transform:
@@ -72,7 +77,7 @@ class EuroSATDataset(Dataset):
 
         # getting cumsum number of images per class sorted alphabetically        
         for i, land_class in enumerate(self.sorted_class_names):
-            self.num_img_per_class[i] = len(os.listdir(os.path.join(data_path, land_class)))
+            self.num_img_per_class[i] = len(os.listdir(os.path.join(self.data_path, land_class)))
         self.cumsum_img_per_class = torch.cumsum(self.num_img_per_class, dim=0)
         
     def __len__(self):
@@ -88,7 +93,7 @@ class EuroSATDataset(Dataset):
         
         # getting image tensor and class name
         class_name = self.sorted_class_names[class_idx]
-        class_path = os.path.join(data_path, class_name)
+        class_path = os.path.join(self.data_path, class_name)
         img_name = os.listdir(class_path)[idx]
         img_path = os.path.join(class_path, img_name)
         img = read_image(img_path).to(torch.float64)
@@ -97,14 +102,14 @@ class EuroSATDataset(Dataset):
         if self.transform:
             img = self.transform(img)
         # one-hot encoding label according to alphabetical order
-        onehot_label = torch.nn.functional.one_hot(torch.tensor(class_idx), num_classes=self.num_classes)
+        onehot_label = torch.nn.functional.one_hot(class_idx, num_classes=self.num_classes)
         
         sample = {'image': img, 'land_use': onehot_label}
         return sample
 
 if __name__ == '__main__':
     # path to EuroSAT dataset
-    data_path = '../EuroSAT_RGB'
+    data_path = './EuroSAT_RGB'
     # do not run again if preprocessing statistics already saved in preprocessing folder
     already_preprocessed = (os.path.isfile('./preprocessing/preprocessing_stats.p') or 
                             os.path.isfile('./preprocessing/preprocessing_stats.pkl'))
@@ -118,21 +123,20 @@ if __name__ == '__main__':
             'sd': channel_sd, 
             'num_img': num_img
         }
-        with open('./preprocessing_stats.pkl', 'wb') as f:
+        with open('./preprocessing/preprocessing_stats.pkl', 'wb') as f:
             pickle.dump(preprocessing_stats, f)
+        eurosat = EuroSATDataset(data_path, './preprocessing/preprocessing_stats.pkl')
     else:
-        with open('./preprocessing_stats.pkl', 'rb') as f:
-            preprocessing_stats = pickle.load(f)
-        channel_mean = preprocessing_stats['mean']
-        channel_sd = preprocessing_stats['sd']
-        num_img = preprocessing_stats['num_img']
+        try: 
+            eurosat = EuroSATDataset(data_path, './preprocessing/preprocessing_stats.pkl')
+        except: 
+            eurosat = EuroSATDataset(data_path, './preprocessing/preprocessing_stats.p')
 
     # testing to see if dataset iterates correctly
-    eurosat = EuroSATDataset(data_path)
     for i in range(0, 27000, 100):
         eurosat[i] 
         if i % 2500 == 0:
-            print(f'{i}: {eurosat[i]['land_use']}')
+            print(f"{i}: {eurosat[i]['land_use']}")
 
     eurosat[26999]
     try:
