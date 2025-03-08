@@ -61,6 +61,7 @@ class EuroSATDataset(Dataset):
         self.transform = transform
         if self.transform:
             self.transform = v2.Compose([
+                v2.ToDtype(torch.float32, scale=True),
                 v2.Normalize(mean=channel_mean, std=channel_sd)
             ])
             # TODO: check to see if these are necessary
@@ -96,15 +97,13 @@ class EuroSATDataset(Dataset):
         class_path = os.path.join(self.data_path, class_name)
         img_name = os.listdir(class_path)[idx]
         img_path = os.path.join(class_path, img_name)
-        img = read_image(img_path).to(torch.float64)
+        img = read_image(img_path)
     
         # preprocessing and augmenting data
         if self.transform:
             img = self.transform(img)
-        # one-hot encoding label according to alphabetical order
-        onehot_label = torch.nn.functional.one_hot(class_idx, num_classes=self.num_classes)
         
-        sample = {'image': img, 'land_use': onehot_label}
+        sample = {'image': img, 'land_use': class_idx}
         return sample
 
 if __name__ == '__main__':
