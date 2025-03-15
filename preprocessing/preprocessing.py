@@ -64,13 +64,6 @@ class EuroSATDataset(Dataset):
                 v2.ToDtype(torch.float32, scale=True),
                 v2.Normalize(mean=channel_mean, std=channel_sd)
             ])
-            # TODO: check to see if these are necessary
-            # self.transform = v2.Compose([
-            #     v2.Normalize(mean=channel_mean, std=channel_sd),
-            #     v2.RandomHorizontalFlip(p=0.5),
-            #     v2.RandomVerticalFlip(p=0.5),
-            #     v2.GaussianBlur((3,3), (0.5,1))
-            # ])
 
         self.sorted_class_names = sorted(os.listdir(self.data_path))
         self.num_classes = len(os.listdir(self.data_path))
