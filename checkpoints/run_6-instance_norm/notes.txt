@@ -1,1 +1,0 @@
-too slow, less than 1% accuracy increase after 2 epochs near beginning
