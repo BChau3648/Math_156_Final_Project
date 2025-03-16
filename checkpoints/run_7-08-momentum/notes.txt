@@ -1,1 +1,0 @@
-immediate jump from 5 val loss to 50 loss or something
