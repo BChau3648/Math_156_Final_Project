@@ -1,5 +1,4 @@
 # dataset
-EuroSAT_RGB/
 model/cnn_no_pad.py
 cnn_losses.png
 Math_156_Final_Project_Proposal.pdf
